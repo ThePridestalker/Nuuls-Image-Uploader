@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
+import android.support.media.ExifInterface;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
@@ -113,6 +114,25 @@ public class MainActivity extends AppCompatActivity {
                 //resize the bitmap to display the pic inside the frame
                 Bitmap bitmapResized = Bitmap.createScaledBitmap(bitmap, image.getWidth(), image.getHeight(), true);
                 image.setImageBitmap(bitmapResized);
+                //remove gps info, if there is any
+                ExifInterface exif = new ExifInterface(picPath);
+                String[] attributes = new String[] {
+                        ExifInterface.TAG_GPS_VERSION_ID,
+                        ExifInterface.TAG_GPS_AREA_INFORMATION,
+                        ExifInterface.TAG_GPS_LATITUDE,
+                        ExifInterface.TAG_GPS_LATITUDE_REF,
+                        ExifInterface.TAG_GPS_LONGITUDE,
+                        ExifInterface.TAG_GPS_LONGITUDE_REF,
+                        ExifInterface.TAG_GPS_ALTITUDE,
+                        ExifInterface.TAG_GPS_ALTITUDE_REF,
+                        ExifInterface.TAG_GPS_TIMESTAMP,
+                        ExifInterface.TAG_GPS_DATESTAMP,
+                };
+                for (String attribute : attributes) {
+                    if (exif.getAttribute(attribute) != null)
+                        exif.setAttribute(attribute, null);
+                }
+                exif.saveAttributes();
             } catch (IOException e) {
                 e.printStackTrace();
             }
