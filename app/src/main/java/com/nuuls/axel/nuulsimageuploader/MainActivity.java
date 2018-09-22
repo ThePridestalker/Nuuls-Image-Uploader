@@ -27,15 +27,22 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static android.os.Environment.getExternalStorageDirectory;
+import static android.os.Environment.getExternalStoragePublicDirectory;
+
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 1;
     public static Bitmap bitmap;
     public static TextView textView;
     private ImageView image;
-    private String picPath;
-    private String uriPicPath;
+    //private String picPath;
+    //private String uriPicPath;
     private Button btnCamera;
     private Button btnUpload;
+
+    private File photoFile = null;
+    private String picPath;
+    private String uriPicPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 if (intent.resolveActivity(getPackageManager()) != null) {
                     //create the File where the photo should go
-                    File photoFile = null;
+                    //File photoFile = null;
                     //asking permission to write in /Pictures
                     if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -62,20 +69,19 @@ public class MainActivity extends AppCompatActivity {
                             generateToast("Accept the permissions FeelsWeirdMan");
                         }
                     }
+                    // photoFile.getAbsolutePath() for Path
+                    // "file://" + photoFile.getAbsolutePath() for Uri
                     try {
                         photoFile = createImageFile();
+                        picPath = photoFile.getAbsolutePath();
+                        uriPicPath = "file://" + photoFile.getAbsolutePath();
                     } catch (IOException e) {
-                        // Error occurred while creating the file
                         e.printStackTrace();
                     }
+                    //if the photoFile contains the picture
                     if (photoFile != null) {
-                        FileProvider.getUriForFile(getApplicationContext(),
-                                getPackageName() + ".fileprovider",
-                                photoFile);
-                        intent.putExtra(MediaStore.EXTRA_OUTPUT,
-                                FileProvider.getUriForFile(getApplicationContext(),
-                                        getPackageName() + ".fileprovider",
-                                        photoFile));
+                        intent = attachFileToIntent(intent, photoFile);
+                        //callback to the activity after the camera activity
                         startActivityForResult(intent, 0);
                     }
                 }
@@ -86,7 +92,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // check if the pic hasn't been taken yet so the button doesn't try to upload nothing
-                // and crashes the app 4HEad
                 if (bitmap == null) {
                     generateToast("Take a picture first :D");
                     return;
@@ -96,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
                 btnCamera.setEnabled(false);
                 btnUpload.setEnabled(false);
                 btnUpload.setText("UPLOADING...");
+                // TODO: add a NaM face while image is being uploaded
                 //start the thread for the upload
                 HttpPostTask httpPostTask = new HttpPostTask(MainActivity.this, image, btnUpload, btnCamera);
                 httpPostTask.execute(picPath);
@@ -103,20 +109,26 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // after getting the pic taken from the camera app
+    //gets the Uri of the file inside the FileProvider and attaches it to the intent
+    private Intent attachFileToIntent(Intent intent, File photoFile) {
+        Uri photoFileUri = FileProvider.getUriForFile(getApplicationContext(),
+                getPackageName() + ".fileprovider",
+                photoFile);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, photoFileUri);
+        return intent;
+    }
+
+    // after getting the pic taken from the camera activity
+    // the image is in the Provider
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
             try {
-                //TODO: RESIZE THE PIC BEFORE INSERTING IT IN THE IMAGEVIEW
-                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), Uri.parse(uriPicPath));
-                //resize the bitmap to display the pic inside the frame
-                Bitmap bitmapResized = Bitmap.createScaledBitmap(bitmap, image.getWidth(), image.getHeight(), true);
-                image.setImageBitmap(bitmapResized);
+                insertImageIntoImageView();
                 //remove gps info, if there is any
                 ExifInterface exif = new ExifInterface(picPath);
-                String[] attributes = new String[] {
+                String[] attributes = new String[]{
                         ExifInterface.TAG_GPS_VERSION_ID,
                         ExifInterface.TAG_GPS_AREA_INFORMATION,
                         ExifInterface.TAG_GPS_LATITUDE,
@@ -141,26 +153,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // gets the image from the FileProvider through the ContentResolver and attaches it to a bitmap
+    // then attaches the bitmap into the imageView to show it
+    private void insertImageIntoImageView() throws IOException {
+        bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), Uri.parse(uriPicPath));
+        //resize the bitmap to display the pic inside the frame
+        Bitmap bitmapResized = Bitmap.createScaledBitmap(bitmap, image.getWidth(), image.getHeight(), true);
+        image.setImageBitmap(bitmapResized);
+    }
+
+    // creates an image file inside the FileProvider directory
     private File createImageFile() throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "XD_" + timeStamp + "_";
-        File storageDir = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES);
+        File storageDir = getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         File imageFile = File.createTempFile(
                 imageFileName,  // prefix
                 ".jpg",   // suffix
                 storageDir      // directory
         );
 
-        // to recover the pic and put it in the bitmap
-        uriPicPath = "file:" + imageFile.getAbsolutePath();
-        // to upload the picture to the server
-        picPath = imageFile.getAbsolutePath();
         return imageFile;
     }
 
-    public void generateToast(String text) {
+    private void generateToast(String text) {
         Toast.makeText(this, text, Toast.LENGTH_LONG).show();
     }
 
