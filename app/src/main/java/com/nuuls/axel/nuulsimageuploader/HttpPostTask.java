@@ -5,12 +5,15 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -37,7 +40,8 @@ public class HttpPostTask extends AsyncTask<String, Void, String> {
         this.btnCamera = btnCamera;
     }
 
-    public String run(String filepath) throws IOException {
+    public String run(String filepath) throws IOException, URISyntaxException {
+        Log.e("ERROR>>",filepath);
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("xd", "justNameItXD.png",
@@ -64,6 +68,8 @@ public class HttpPostTask extends AsyncTask<String, Void, String> {
         try {
             responseFromServer = run(params[0]);
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
             e.printStackTrace();
         }
         return responseFromServer;
