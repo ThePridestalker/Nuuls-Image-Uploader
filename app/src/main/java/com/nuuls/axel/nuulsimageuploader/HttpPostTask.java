@@ -3,17 +3,16 @@ package com.nuuls.axel.nuulsimageuploader;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.AsyncTask;
-import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -32,16 +31,17 @@ public class HttpPostTask extends AsyncTask<String, Void, String> {
     ImageView image;
     Button btnUpload;
     Button btnCamera;
+    TextView textView;
 
-    public HttpPostTask(Context context, ImageView image, Button btnUpload, Button btnCamera) {
+    public HttpPostTask(Context context, ImageView image, Button btnUpload, Button btnCamera, TextView textView, Bitmap bitmap) {
         this.context = context;
         this.image = image;
         this.btnUpload = btnUpload;
         this.btnCamera = btnCamera;
+        this.textView = textView;
     }
 
-    public String run(String filepath) throws IOException, URISyntaxException {
-        Log.e("ERROR>>",filepath);
+    public String run(String filepath) throws IOException {
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("xd", "justNameItXD.png",
@@ -69,8 +69,6 @@ public class HttpPostTask extends AsyncTask<String, Void, String> {
             responseFromServer = run(params[0]);
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
         }
         return responseFromServer;
     }
@@ -85,13 +83,12 @@ public class HttpPostTask extends AsyncTask<String, Void, String> {
         clipboard.setPrimaryClip(clip);
         // reset the image to nuulsLogo
         image.setImageResource(R.drawable.nuulslogo);
-        //display the url
-        MainActivity.textView.setText(result);
+        // display the url
+        textView.setText(result);
         btnUpload.setBackgroundColor(Color.parseColor("#4caf50"));
         btnUpload.setText("UPLOAD");
         btnCamera.setEnabled(true);
         btnUpload.setEnabled(true);
-        //reset the bitmap so you cant upload the same thing infinitely
         MainActivity.bitmap = null;
     }
 }
