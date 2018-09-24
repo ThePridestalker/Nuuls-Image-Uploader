@@ -16,6 +16,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -59,26 +60,38 @@ public class MainActivity extends AppCompatActivity {
         String action = intent.getAction();
         String type = intent.getType();
 
-        // if im receiving an image from other app
-        if (Intent.ACTION_SEND.equals(action) && type != null) {
-            if (type.startsWith("image/")) {
-                handleSendImage(intent);
+
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED) {
+            // if im receiving an image from other app
+            if (Intent.ACTION_SEND.equals(action) && type != null) {
+                if (type.startsWith("image/")) {
+                    handleSendImage(intent);
+                }
+            }
+        } else {
+            //this never reaches because with no permission granted the intent coming from outside stops
+            forceAcceptPermission();
+        }
+
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            // asking permission to write in /Pictures
+            if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                // if it has no permission, asks for it
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    enablePermission();
+                }
             }
         }
 
         btnCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                if (intent.resolveActivity(getPackageManager()) != null) {
-                    // asking permission to write in /Pictures
-                    if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
-                        } else {
-                            generateToast("Accept the permissions FeelsWeirdMan");
-                        }
-                    }
+                // if the user granted permission to save files
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
                     try {
                         photoFile = createImageFile();
                         picPath = photoFile.getAbsolutePath();
@@ -91,6 +104,8 @@ public class MainActivity extends AppCompatActivity {
                         // callback to the activity after the camera activity
                         startActivityForResult(intent, 0);
                     }
+                } else {
+                    forceAcceptPermission();
                 }
             }
         });
@@ -98,29 +113,53 @@ public class MainActivity extends AppCompatActivity {
         btnUpload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // check if the pic hasn't been taken yet so the button doesn't try to upload nothing
-                if (bitmap == null) {
-                    generateToast("Take a picture first :D");
-                    return;
+                // if the user granted permission to save files
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    // check if the pic hasn't been taken yet so the button doesn't try to upload nothing
+                    if (bitmap == null) {
+                        generateToast("Take a picture first :D");
+                        return;
+                    }
+                    // change the color of the button to the wheel that appears when uploading in the website
+                    btnUpload.setBackgroundColor(Color.parseColor("#de2761"));
+                    btnCamera.setEnabled(false);
+                    btnUpload.setEnabled(false);
+                    btnUpload.setText("UPLOADING...");
+                    // TODO: add a NaM face to imageView while image is being uploaded
+                    // start the thread for the upload
+                    HttpPostTask httpPostTask = new HttpPostTask(MainActivity.this, image, btnUpload, btnCamera, textView, bitmap);
+                    httpPostTask.execute(picPath);
+
+                } else {
+                    forceAcceptPermission();
                 }
-                // change the color of the button to the wheel that appears when uploading in the website
-                btnUpload.setBackgroundColor(Color.parseColor("#de2761"));
-                btnCamera.setEnabled(false);
-                btnUpload.setEnabled(false);
-                btnUpload.setText("UPLOADING...");
-                // TODO: add a NaM face to imageView while image is being uploaded
-                // start the thread for the upload
-                HttpPostTask httpPostTask = new HttpPostTask(MainActivity.this, image, btnUpload, btnCamera, textView, bitmap);
-                httpPostTask.execute(picPath);
             }
         });
     }
 
+    private void forceAcceptPermission() {
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+            // if the user didnt accept the permissions
+            enablePermission();
+            // if the user checked the "never show again"
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                enablePermission();
+            }
+        }
+    }
+
+    private void enablePermission() {
+        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+    }
 
     private void handleSendImage(Intent intent) {
+
         final Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
         try {
             // get the bitmap from the uri
+            Log.e("IMAGE URI>", imageUri.toString());
             bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
         } catch (IOException e) {
             e.printStackTrace();
@@ -139,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             photoFile = createImageFile();
             picPath = photoFile.getAbsolutePath();
+            Log.e("PIC PATH>", picPath);
             FileOutputStream fos = new FileOutputStream(photoFile);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
             fos.flush();
