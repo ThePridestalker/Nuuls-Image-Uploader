@@ -3,8 +3,6 @@ package com.nuuls.axel.nuulsimageuploader;
 import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,11 +18,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.exifinterface.media.ExifInterface;
 
@@ -46,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements HttpPostTask.onUp
     private File photoFile;
     private Uri photoFileUri;
     private String picPath;
-    private boolean tookPicture = false;
+    private Bitmap bitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +53,12 @@ public class MainActivity extends AppCompatActivity implements HttpPostTask.onUp
         btnCamera = findViewById(R.id.buttonCamera);
         btnUpload = findViewById(R.id.buttonUpload);
         image = findViewById(R.id.imageView);
+
+        if (bitmap != null) {
+            image.setImageBitmap(bitmap);
+        } else {
+            image.setImageResource(R.drawable.nuulslogo);
+        }
 
         // Handling the intent coming from other app
         // Get intent, action and MIME type
@@ -113,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements HttpPostTask.onUp
                     == PackageManager.PERMISSION_GRANTED) {
                 // check if the pic hasn't been taken yet so the button doesn't try to upload nothing
                 // and crashes the app 4HEad
-                if (!tookPicture) {
+                if (bitmap == null) {
                     generateToast("Take a picture first :D");
                     return;
                 }
@@ -148,11 +150,11 @@ public class MainActivity extends AppCompatActivity implements HttpPostTask.onUp
     }
 
     private void handleSendImage(Intent intent) {
-        final Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
-        image.setImageURI(imageUri);
+        photoFileUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        image.setImageURI(photoFileUri);
 
         try {
-            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), photoFileUri);
             photoFile = createImageFile();
             picPath = photoFile.getAbsolutePath();
 
@@ -160,7 +162,6 @@ public class MainActivity extends AppCompatActivity implements HttpPostTask.onUp
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
             fos.flush();
             fos.close();
-            tookPicture = true;
             removeExifGeolocation();
         } catch (IOException e) {
             e.printStackTrace();
@@ -186,8 +187,8 @@ public class MainActivity extends AppCompatActivity implements HttpPostTask.onUp
         if (resultCode == RESULT_OK && requestCode == CAMERA_REQUEST_CODE) {
             try {
                 image.setImageURI(photoFileUri);
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), photoFileUri);
                 removeExifGeolocation();
-                tookPicture = true;
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -240,7 +241,7 @@ public class MainActivity extends AppCompatActivity implements HttpPostTask.onUp
         btnCamera.setEnabled(true);
         btnUpload.setEnabled(true);
         //reset the bitmap so you cant upload the same thing infinitely
-        tookPicture = false;
+        bitmap = null;
     }
 
     // creates an image file inside the FileProvider directory
