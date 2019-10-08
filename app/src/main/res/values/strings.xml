@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Nuuls Image Uploader</string>
+    <string name="uploading">UPLOADING...</string>
+    <string name="upload">UPLOAD</string>
+    <string name="image_preview">Image preview</string>
+    <string name="open_camera">OPEN CAMERA</string>
+    <string name="canceled">CANCELED</string>
 </resources>

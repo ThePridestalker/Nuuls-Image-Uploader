@@ -1,15 +1,6 @@
 package com.nuuls.axel.nuulsimageuploader;
 
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.os.AsyncTask;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,26 +17,21 @@ public class HttpPostTask extends AsyncTask<String, Void, String> {
     private static final MediaType MEDIA_TYPE_PNG = MediaType.get("image/png");
     private static final String uploadURL = "https://i.nuuls.com/upload";
     private final OkHttpClient client = new OkHttpClient();
+    private final onUploadedCallback callback;
 
-    Context context;
-    ImageView image;
-    Button btnUpload;
-    Button btnCamera;
-    TextView textView;
-
-    public HttpPostTask(Context context, ImageView image, Button btnUpload, Button btnCamera, TextView textView, Bitmap bitmap) {
-        this.context = context;
-        this.image = image;
-        this.btnUpload = btnUpload;
-        this.btnCamera = btnCamera;
-        this.textView = textView;
+    interface onUploadedCallback {
+        void onUpload(String result);
     }
 
-    public String run(String filepath) throws IOException {
+    HttpPostTask(onUploadedCallback callback) {
+        this.callback = callback;
+    }
+
+    private String run(String filepath) throws IOException {
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("xd", "justNameItXD.png",
-                        RequestBody.create(MEDIA_TYPE_PNG, new File(filepath)))
+                        RequestBody.create(new File(filepath), MEDIA_TYPE_PNG))
                 .build();
 
         Request request = new Request.Builder()
@@ -55,7 +41,7 @@ public class HttpPostTask extends AsyncTask<String, Void, String> {
 
         String responseUrl = "error XD";
         Response response = client.newCall(request).execute();
-        if (response.isSuccessful()) {
+        if (response.isSuccessful() && response.body() != null) {
             responseUrl = response.body().string();
             return responseUrl;
         }
@@ -76,19 +62,6 @@ public class HttpPostTask extends AsyncTask<String, Void, String> {
     @Override
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
-        Toast.makeText(context, "Copied: " + result, Toast.LENGTH_LONG).show();
-        // copy the url to the clipboard
-        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("URL from nuuls server xd", result);
-        clipboard.setPrimaryClip(clip);
-        // reset the image to nuulsLogo
-        image.setImageResource(R.drawable.nuulslogo);
-        // display the url
-        textView.setText(result);
-        btnUpload.setBackgroundColor(Color.parseColor("#4caf50"));
-        btnUpload.setText("UPLOAD");
-        btnCamera.setEnabled(true);
-        btnUpload.setEnabled(true);
-        MainActivity.bitmap = null;
+        callback.onUpload(result);
     }
 }

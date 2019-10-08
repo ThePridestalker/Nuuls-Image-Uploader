@@ -1,60 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#181818"
-    android:orientation="vertical"
-    android:weightSum="10"
     tools:context=".MainActivity">
 
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
-        android:layout_height="500dp"
+        android:layout_height="0dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginBottom="5dp"
+        android:contentDescription="@string/image_preview"
         android:scaleType="centerInside"
-        android:adjustViewBounds="true"
-        android:layout_marginBottom="5px"
-        android:layout_marginLeft="5px"
-        android:layout_marginRight="5px"
-        android:layout_marginTop="10px"
-        android:layout_weight="8"
-        android:contentDescription="TODO"
-        android:src="@drawable/nuulslogo" />
+        app:layout_constraintBottom_toTopOf="@id/imageUrl"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <android.support.v7.widget.AppCompatTextView
+    <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/imageUrl"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="0dp"
-        android:text=""
         android:gravity="center"
-        android:textColor="@android:color/white" />
+        android:text=""
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toTopOf="@id/buttonCamera"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/imageView" />
+
     <Button
         android:id="@+id/buttonCamera"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="5px"
-        android:layout_marginLeft="10px"
-        android:layout_marginRight="10px"
-        android:layout_marginTop="5px"
-        android:layout_weight="1"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="5dp"
         android:background="#2196f3"
-        android:text="OPEN CAMERA"
-        android:textColor="@android:color/white" />
+        android:text="@string/open_camera"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toTopOf="@id/buttonUpload"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/imageUrl" />
 
     <Button
         android:id="@+id/buttonUpload"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10px"
-        android:layout_marginLeft="10px"
-        android:layout_marginRight="10px"
-        android:layout_marginTop="5px"
-        android:layout_weight="1"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="5dp"
         android:background="#4caf50"
-        android:text="UPLOAD"
-        android:textColor="@android:color/white" />
+        android:text="@string/upload"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/buttonCamera" />
 
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
