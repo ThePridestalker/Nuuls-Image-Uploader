@@ -3,4 +3,8 @@
     <color name="colorPrimary">#181818</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="main_background">#181818</color>
+    <color name="camera_background">#2196f3</color>
+    <color name="upload_background">#4caf50</color>
+    <color name="upload_progress_background">#de2761</color>
 </resources>

@@ -1,3 +1,5 @@
 <paths>
-    <external-path name="Pictures" path="Pictures"/>
+    <external-path
+        name="Pictures"
+        path="Android/data/com.nuuls.axel.nuulsimageuploader/files/Pictures" />
 </paths>
